@@ -60,6 +60,13 @@ Stack-like error message storage and retrieval.
 > - `woem_pop` returns a flag and a pointer, if the flag is `true` the caller is responsible for calling `free` on returned pointer.  
 > - `woem_clear` frees all remaining messages.  
 
+### gl_utils
+OpenGL error checking.  
+- `gl_errors_clean` - clear all pending OpenGL errors.  
+- `gl_errors_check` - check for errors, returns `true` if none, otherwise stores errors via `woem_push`.  
+- `gl_get_error_string` - returns a string description for a given OpenGL error code.  
+> Requires OpenGL and GLEW.  
+
 ---
 
 **License**: Apache 2.0
