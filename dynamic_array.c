@@ -94,7 +94,7 @@ bool da_dynamic_array_ensure_capacity(
 	const size_t capacity_target = *capacity_pointer
 		? *capacity_pointer + (*capacity_pointer >> 1)
 		: base_amount;
-	size_t capacity_new = clamp_size_t(
+	size_t capacity_new = cv_clamp_size_t(
 		capacity_target,
 		needed,
 		capacity_maximal
@@ -159,7 +159,7 @@ bool da_dynamic_array_ensure_capacity_list(
 		? *capacity_pointer + (*capacity_pointer >> 1)
 		: base_amount;
 
-	size_t capacity_new[2] = {clamp_size_t(capacity_target, needed, capacity_maximal), needed };
+	size_t capacity_new[2] = {cv_clamp_size_t(capacity_target, needed, capacity_maximal), needed };
 	size_t tries = (capacity_new[0] == capacity_new[1]) ? 1 : 2;
 	for(size_t try_index = 0; try_index < tries; ++try_index )
 	{
