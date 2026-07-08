@@ -67,6 +67,19 @@ OpenGL error checking.
 - `gl_get_error_string` - returns a string description for a given OpenGL error code.  
 > Requires OpenGL and GLEW.  
 
+### gl_wrappers
+Safe wrappers for all OpenGL functions that may set an error state; zero overhead in release builds.
+- `glCreateShader_wrapped`
+- `glShaderSource_wrapped`
+- `glCompileShader_wrapped`
+- `glCreateProgram_wrapped`
+- `glAttachShader_wrapped`
+- `glLinkProgram_wrapped`
+- `glDeleteShader_wrapped`
+- `glDeleteProgram_wrapped`
+> Functions return `bool`. In release builds they always `true`; in debug they validate arguments and return result of OpenGL error checking.  
+> Requires OpenGL and GLEW.  
+
 ---
 
 **License**: Apache 2.0
