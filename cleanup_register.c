@@ -54,7 +54,7 @@ void cr_register_cleanup_wrapper(
  */
 static void cr_cleanup_wrapper(void) {
 	assert_m(
-		cr_current_handle.function_pointer != NULL && cr_registered_atexit,
+		cr_current_handle.function_pointer != NULL && cr_registered_atexit == true,
 		"Invalid exit callback state"
 	);
 	if ( cr_current_handle.function_pointer )
