@@ -77,48 +77,55 @@
 #endif /* AM_BACKEND_WINDOWS */
 
 /* Power-of-two pointer size check;
- * disable using AM_ALLOW_NON_POWER_OF_TWO_POINTER for AM_BACKEND_FALLBACK
+ * disable using AM_ALLOW_NON_POWER_OF_TWO_ALIGNMENT for AM_BACKEND_FALLBACK
  */
-#ifdef AM_ALLOW_NON_POWER_OF_TWO_POINTER
+#ifdef AM_ALLOW_NON_POWER_OF_TWO_ALIGNMENT
 #	if defined AM_BACKEND_STANDARD || defined AM_BACKEND_POSIX || defined AM_BACKEND_WINDOWS
-#		error "Pointer must be the power of two for POSIX or standard C; try AM_FORCE_FALLBACK"
+#		error "POSIX and standard C require power of two alignment; try AM_FORCE_FALLBACK"
 #	endif
-#	define AM_POINTER_SIZE_IS_POWER_OF_TWO 0
+#	define AM_ALIGN_BITWISE 0
 #else
 	static_assert_m(
 		(sizeof(void *) & (sizeof(void *) - (size_t) 1)) == (size_t) 0,
 		"The size of a pointer must be a power of two"
 	);
-#	define AM_POINTER_SIZE_IS_POWER_OF_TWO 1
+#	define AM_ALIGN_BITWISE 1
 #endif
 
 /* Metadata structure, holds information needed to free or reallocate,
  * stored right before user-visible pointer
  */
 struct AM_Alignment_Header_Info {
-	void	* raw_memory_pointer;		/* pointer to release by corresponding free function*/
-	size_t	user_memory_allocated_size;	/* size requested by the caller						*/
-	size_t	alignment;					/* power-of-two align, minimum the size of a pointer*/
+	void	* raw_memory_pointer;		/* pointer to release by corresponding free function	*/
+	size_t	user_memory_allocated_size;	/* size requested by the caller							*/
+	size_t	alignment;					/* requested alignment; power-of-two on most backends	*/
 };
 
 static void * am_aligned_allocation( size_t alignment, size_t size, void ** restrict out_raw_memory_pointer );
 
 void * am_aligned_malloc( size_t alignment, size_t size ) {
-	assert_m(size		!= 0,				"Amount of bytes for allocation shouldn't be zero"	);
-	assert_m(alignment	!= 0,				"Alignment shouldn't be zero, it's a divider"		);
-	assert_m(alignment	>= sizeof(void *),	"Alignment must be at least the size of a pointer"	);
+	assert_m(size		!= 0, "Amount of bytes for allocation shouldn't be zero");
+	assert_m(alignment	!= 0, "Alignment shouldn't be zero, it's a divider"		);
 
 	if ( alignment == 0 || size == 0 )
 		return NULL;
 
 #if defined AM_BACKEND_STANDARD || defined AM_BACKEND_POSIX || defined AM_BACKEND_WINDOWS ||\
-	(defined AM_BACKEND_FALLBACK && AM_POINTER_SIZE_IS_POWER_OF_TWO == 1)
+	(defined AM_BACKEND_FALLBACK && AM_ALIGN_BITWISE == 1)
 	assert_mf(
 		(alignment & (alignment - 1)) == 0,
-		"alignment must be a power of two for this backend (alignment: %zu)", alignment
+		"Alignment must be a power of two for this backend (alignment: %zu)", alignment
 	);
 	if ( (alignment & (alignment - 1)) != 0 )
 		return NULL;
+#	ifdef AM_BACKEND_POSIX
+	assert_mf(
+		alignment % sizeof(void *) == 0,
+		"Alignment must be a multiple of size of pointer (alignment: %zu)", alignment
+	);
+	if ( alignment % sizeof(void *) != 0 )
+		return NULL;
+#	endif /* AM_BACKEND_POSIX */
 #endif /* AM_BACKEND_STANDARD AM_BACKEND_POSIX AM_BACKEND_WINDOWS ... */
 
 #ifdef AM_BACKEND_WINDOWS
@@ -189,7 +196,7 @@ void * am_aligned_realloc( void * restrict pointer, size_t size_new ) {
 	const size_t alignment = header_old.alignment;
 #if defined AM_BACKEND_WINDOWS
 	void * raw_memory_pointer_old = header_old.raw_memory_pointer;
-	assert_m(
+	assert_mf(
 		size_new <= SIZE_MAX - sizeof(struct AM_Alignment_Header_Info),
 		"Size of block for reallocation shouldn't be that big (size: %zu)", size_new
 	);
@@ -203,12 +210,16 @@ void * am_aligned_realloc( void * restrict pointer, size_t size_new ) {
 		sizeof(struct AM_Alignment_Header_Info)
 	);
 	if ( raw_memory_pointer_new == NULL ) return NULL;
-	struct AM_Alignment_Header_Info * header_pointer_new = (struct AM_Alignment_Header_Info *)
-		raw_memory_pointer_new;
-
-	header_pointer_new->user_memory_allocated_size	= size_new;
-	header_pointer_new->raw_memory_pointer			= raw_memory_pointer_new;
-	header_pointer_new->alignment					= alignment;
+	struct AM_Alignment_Header_Info header_new = {
+		.raw_memory_pointer			= raw_memory_pointer_new,
+		.alignment					= alignment,
+		.user_memory_allocated_size	= size_new
+	};
+	memcpy(
+		raw_memory_pointer_new,
+		&header_new,
+		sizeof(header_new)
+	);
 
 	return (void *) ((char *) raw_memory_pointer_new + sizeof(struct AM_Alignment_Header_Info));
 
@@ -293,14 +304,14 @@ void * am_aligned_realloc( void * restrict pointer, size_t size_new ) {
 		(uintptr_t) raw_memory_pointer_new + sizeof(struct AM_Alignment_Header_Info);
 	uintptr_t aligned = 0;
 
-#		if AM_POINTER_SIZE_IS_POWER_OF_TWO == 1
+#		if AM_ALIGN_BITWISE == 1
 	aligned = (address + alignment - 1) & ~(uintptr_t)(alignment - 1);
-#		else /* AM_POINTER_SIZE_IS_POWER_OF_TWO == 1 */
+#		else /* AM_ALIGN_BITWISE == 1 */
 	size_t remainder = address % alignment;
 	aligned = (remainder != 0)
 		? address + alignment - remainder
 		: address;
-#		endif /* AM_POINTER_SIZE_IS_POWER_OF_TWO */
+#		endif /* AM_ALIGN_BITWISE */
 
 	void * data_source_pointer = (void *)( (uintptr_t) raw_memory_pointer_new + offset_old );
 
@@ -351,7 +362,7 @@ void am_aligned_free( void * restrict pointer ) {
  * correct arguments
  *
  * Parameters:
- * alignment				- desired address alignment (at least sizeof(void *))
+ * alignment				- desired address alignment (POSIX: multiple of pointer size)
  * size						- size of memory block to allocate
  * out_raw_memory_pointer	- original memory block pointer
  *
@@ -388,14 +399,14 @@ static void * am_aligned_allocation(
 	uintptr_t address = (uintptr_t)raw_memory_pointer + sizeof(struct AM_Alignment_Header_Info);
 	uintptr_t aligned = 0;
 
-#	if AM_POINTER_SIZE_IS_POWER_OF_TWO == 1
+#	if AM_ALIGN_BITWISE == 1
 	aligned = (address + alignment - 1) & ~(uintptr_t)(alignment - 1);
-#	else /* AM_POINTER_SIZE_IS_POWER_OF_TWO == 0 */
+#	else /* AM_ALIGN_BITWISE == 0 */
 	size_t remainder = address % alignment;
 	aligned = (remainder != 0)
 		? address + alignment - remainder
 		: address;
-#	endif /* AM_POINTER_SIZE_IS_POWER_OF_TWO == 1 */
+#	endif /* AM_ALIGN_BITWISE == 1 */
 
 	*out_raw_memory_pointer = raw_memory_pointer;
 	return (void *) aligned;
