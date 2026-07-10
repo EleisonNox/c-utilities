@@ -96,8 +96,12 @@
  * stored right before user-visible pointer
  */
 struct AM_Alignment_Header_Info {
+#ifndef AM_BACKEND_WINDOWS
+#	if !defined AM_BACKEND_STANDARD && !defined AM_BACKEND_POSIX
 	void	* raw_memory_pointer;		/* pointer to release by corresponding free function	*/
+#	endif /* AM_BACKEND_STANDARD, AM_BACKEND_POSIX */
 	size_t	user_memory_allocated_size;	/* size requested by the caller							*/
+#endif /* AM_BACKEND_WINDOWS */
 	size_t	alignment;					/* requested alignment; power-of-two on most backends	*/
 };
 
@@ -187,11 +191,14 @@ void * am_aligned_malloc( size_t alignment, size_t size ) {
 		raw_memory_pointer != NULL,
 		"If there is a result pointer there must be and a raw pointer"
 	);
-
 	struct AM_Alignment_Header_Info header = {
+#ifndef AM_BACKEND_WINDOWS
+#	if !defined AM_BACKEND_STANDARD && !defined AM_BACKEND_POSIX
 		.raw_memory_pointer			= raw_memory_pointer,
-		.alignment					= alignment,
-		.user_memory_allocated_size	= size
+#	endif /* AM_BACKEND_STANDARD, AM_BACKEND_POSIX */
+		.user_memory_allocated_size	= size,
+#endif /* AM_BACKEND_WINDOWS */
+		.alignment					= alignment
 	};
 	memcpy(
 		(char *) result_pointer - sizeof(header),
@@ -247,7 +254,8 @@ void * am_aligned_realloc( void * restrict pointer, size_t size_new ) {
 
 	const size_t alignment = header_old.alignment;
 #if defined AM_BACKEND_WINDOWS
-	void * raw_memory_pointer_old = header_old.raw_memory_pointer;
+
+	void * raw_memory_pointer_old = (char *)pointer - sizeof(struct AM_Alignment_Header_Info);
 	assert_mf(
 		size_new <= SIZE_MAX - sizeof(struct AM_Alignment_Header_Info),
 		"Size of block for reallocation shouldn't be that big (size: %zu)", size_new
@@ -262,11 +270,7 @@ void * am_aligned_realloc( void * restrict pointer, size_t size_new ) {
 		sizeof(struct AM_Alignment_Header_Info)
 	);
 	if ( raw_memory_pointer_new == NULL ) return NULL;
-	struct AM_Alignment_Header_Info header_new = {
-		.raw_memory_pointer			= raw_memory_pointer_new,
-		.alignment					= alignment,
-		.user_memory_allocated_size	= size_new
-	};
+	struct AM_Alignment_Header_Info header_new = { alignment };
 	memcpy(
 		raw_memory_pointer_new,
 		&header_new,
@@ -308,7 +312,6 @@ void * am_aligned_realloc( void * restrict pointer, size_t size_new ) {
 	);
 
 	struct AM_Alignment_Header_Info header_new = {
-		.raw_memory_pointer			= raw_memory_pointer,
 		.alignment					= alignment,
 		.user_memory_allocated_size	= size_new
 	};
@@ -365,7 +368,8 @@ void * am_aligned_realloc( void * restrict pointer, size_t size_new ) {
 		: address;
 #		endif /* AM_ALIGN_BITWISE */
 
-	void * data_source_pointer = (void *)( (uintptr_t) raw_memory_pointer_new + offset_old );
+	void * data_source_pointer =
+		(void *)( (uintptr_t) raw_memory_pointer_new + (uintptr_t) offset_old );
 
 	if ( aligned != (uintptr_t) data_source_pointer )
 		memmove(
@@ -394,16 +398,24 @@ void am_aligned_free( void * restrict pointer ) {
 	assert_m( pointer != NULL, "no memory block to free found" );
 	if ( pointer == NULL ) return;
 
+#ifdef AM_BACKEND_WINDOWS
+	_aligned_free( (char *)pointer - sizeof(struct AM_Alignment_Header_Info) );
+#else /* AM_BACKEND_WINDOWS */
 	struct AM_Alignment_Header_Info header;
 	memcpy(
 		&header,
 		(char *) pointer - sizeof(header),
 		sizeof(header)
 	);
-#ifdef AM_BACKEND_WINDOWS
-	_aligned_free( header.raw_memory_pointer );
-#else /* AM_BACKEND_WINDOWS */
+#	if defined AM_BACKEND_STANDARD || defined AM_BACKEND_POSIX
+	/* overflow isn't possible because its backed on same logic within an allocation function */
+	const size_t original_pointer_offset =
+		(sizeof(struct AM_Alignment_Header_Info) + header.alignment - 1)
+			& ~(size_t)(header.alignment - 1);
+	free( (char *)pointer - original_pointer_offset );
+#	else /* AM_BACKEND_FALLBACK */
 	free( header.raw_memory_pointer );
+#	endif /* AM_BACKEND_STANDARD, AM_BACKEND_POSIX */
 #endif /* AM_BACKEND_WINDOWS */
 }
 
