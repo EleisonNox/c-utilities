@@ -85,6 +85,13 @@ Create OpenGL shader program from vertex and fragment sources.
 - `csp_create_shader_program` - create a shader program from a single fragment and single vertex shader source code string.
 - `csp_create_shader_program_many_sources` - creates a program from one or more vertex and fragment source strings.
 
+### lcg_random
+Fast and lightweight pseudo-random number generator with a minimal overhead, based on linear congruential algorithm and designed for unbiased statistical distribution.  
+> **Deterministic by default** - seeds are fixed, change it via lcg_set_random64 and lcg_set_random32.  
+> **Thread-unsafe** - has global seed states which are shared.  
+> **Bounded random numbers** - function calls lcg_rand32_max(max) and lcg_rand64_max(max) returns values in range of [0; max - 1].  
+> Requires C99.  
+
 ---
 
 **License**: Apache 2.0
