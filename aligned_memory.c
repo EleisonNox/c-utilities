@@ -133,6 +133,8 @@ static void * am_aligned_allocation(
 	size_t alignment, size_t size, void ** restrict out_raw_memory_pointer
 );
 
+static inline size_t am_check_array_bounds( size_t elements_amount, size_t element_size );
+
 void * am_aligned_malloc( size_t alignment, size_t size ) {
 	assert_m(size		!= 0, "Amount of bytes for allocation shouldn't be zero");
 	assert_m(alignment	!= 0, "Alignment shouldn't be zero, it's a divider"		);
@@ -246,24 +248,19 @@ struct AM_Alignment_Header_Info header = {
 	return result_pointer;
 }
 
+void * am_aligned_malloc_array( size_t alignment, size_t elements_amount, size_t element_size ) {
+	size_t total_bytes = am_check_array_bounds( elements_amount, element_size );
+	if ( total_bytes == 0 )
+		return NULL;
+	return am_aligned_malloc( alignment, total_bytes );
+}
+
 #ifndef AM_NO_CALLOC
 void * am_aligned_calloc( size_t alignment, size_t elements_amount, size_t element_size ) {
-	/* alignment check is located in the am_aligned_malloc function */
-	assert_m( elements_amount	!= 0, "Amount of elements for allocation shouldn't be zero"	);
-	assert_m( element_size		!= 0, "Element size shouldn't be zero, it's a divider"		);
-
-	if ( element_size == 0 || elements_amount == 0 )
+	size_t total_bytes = am_check_array_bounds( elements_amount, element_size );
+	if ( total_bytes == 0 )
 		return NULL;
 
-	assert_mf(
-		elements_amount <= SIZE_MAX / element_size,
-		"Size of block for allocation shouldn't be that big "
-		"(elements amount: %zu, element size: %zu)", elements_amount, element_size
-	);
-	if ( elements_amount > SIZE_MAX / element_size )
-		return NULL;
-
-	size_t total_bytes = elements_amount * element_size;
 	void * result_pointer = am_aligned_malloc( alignment, total_bytes );
 	if ( result_pointer == NULL )
 		return NULL;
@@ -274,6 +271,18 @@ void * am_aligned_calloc( size_t alignment, size_t elements_amount, size_t eleme
 #endif /* AM_NO_CALLOC */
 
 #ifndef AM_NO_REALLOC
+
+void * am_aligned_realloc_array(
+		void * restrict pointer, size_t elements_amount, size_t element_size
+	)
+{
+	size_t total_bytes = am_check_array_bounds( elements_amount, element_size );
+	if ( total_bytes == 0 )
+		return NULL;
+
+	return am_aligned_realloc( pointer, total_bytes );
+}
+
 void * am_aligned_realloc( void * restrict pointer, size_t size_new ) {
 	assert_m( pointer	!= NULL,	"No memory block found for reallocation"		);
 	assert_m( size_new	!= 0,		"Reallocation to a zero size is not available"	);
@@ -435,6 +444,7 @@ void * am_aligned_realloc( void * restrict pointer, size_t size_new ) {
 #		endif /* AM_BACKEND_POSIX */
 #	endif /* AM_BACKEND_WINDOWS */
 }
+
 #endif /* AM_NO_REALLOC */
 
 void am_aligned_free( void * restrict pointer ) {
@@ -566,4 +576,34 @@ static void * am_aligned_allocation(
 	return (void *)((char *)raw_memory_pointer + header_information_size_aligned);
 
 #endif /* AM_BACKEND_FALLBACK */
+}
+
+/* Function:
+ * validate the allocation size
+ *
+ * alignment		- desired address alignment
+ * elements_amount	- amount of elements
+ * element_size		- size of each element
+ *
+ * Returns:
+ * non-zero			- allocation size
+ * zero				- incorrect arguments
+ */
+static inline size_t am_check_array_bounds( size_t elements_amount, size_t element_size ) {
+	/* alignment check is located in the am_aligned_malloc function */
+	assert_m( elements_amount	!= 0, "Amount of elements for allocation shouldn't be zero"	);
+	assert_m( element_size		!= 0, "Element size shouldn't be zero, it's a divider"		);
+
+	if ( element_size == 0 || elements_amount == 0 )
+		return 0;
+
+	assert_mf(
+		elements_amount <= SIZE_MAX / element_size,
+		"Size of block for allocation shouldn't be that big "
+		"(elements amount: %zu, element size: %zu)", elements_amount, element_size
+	);
+	if ( elements_amount > SIZE_MAX / element_size )
+		return 0;
+
+	return elements_amount * element_size;
 }
