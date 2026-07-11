@@ -29,16 +29,16 @@
 /* Logic to choose the alignment backend
  *
  * Available backends and its requirements (in order of preferences unless forces):
- *	- AM_BACKEND_WINDOWS	: alignment must be a power of two,
+ * - AM_BACKEND_WINDOWS	: alignment must be a power of two,
  *							. _WIN32,
  *							. C99
- *	- AM_BACKEND_POSIX		: alignment must be a power of two and a multiple of a pointer size,
+ * - AM_BACKEND_POSIX	: alignment must be a power of two and a multiple of a pointer size,
  *							. _POSIX_C_SOURCE >= 200112L
  *							. C99
- *	- AM_BACKEND_STANDARD	: alignment must be a power of two,
+ * - AM_BACKEND_STANDARD: alignment must be a power of two,
  *							. C11,
  *							. non-Windows system
- *	- AM_BACKEND_FALLBACK	:
+ * - AM_BACKEND_FALLBACK:
  *		- default (AM_ALIGN_BITWISE = 1)					:
  *								: pointer size and alignment must be a power of two
  *		- with AM_ALLOW_NON_POWER_OF_TWO_ALIGNMENT defined	:
@@ -48,19 +48,21 @@
  *							. C99
  *
  * Available user macro definition before including the header:
- *	- AM_FORCE_WINDOWS						: force Windows backend
- *	- AM_FORCE_POSIX						: force POSIX backend
- *	- AM_FORCE_C11							: force C11 backend
- *	- AM_FORCE_FALLBACK						: force fallback backend
- *	- AM_ALLOW_NON_POWER_OF_TWO_ALIGNMENT	: allow non-power-of-two alignment in
+ * - AM_FORCE_WINDOWS					: force Windows backend
+ * - AM_FORCE_POSIX						: force POSIX backend
+ * - AM_FORCE_C11						: force C11 backend
+ * - AM_FORCE_FALLBACK					: force fallback backend
+ * - AM_ALLOW_NON_POWER_OF_TWO_ALIGNMENT: allow non-power-of-two alignment in
  *												(AM_BACKEND_FALLBACK only)
+ * - AM_NO_REALLOC						: exclude realloc function and reduce header size
+ * - AM_NO_CALLOC						: exclude calloc
  */
 
 /* Function:
  * release a raw memory block allocated with an am_aligned_malloc
  *
  * Parameters:
- * pointer	- pointer to memory block previously allocated with an am_aligned_malloc
+ * pointer - pointer to memory block previously allocated with an am_aligned_malloc
  */
 void am_aligned_free( void * restrict pointer );
 
@@ -68,30 +70,32 @@ void am_aligned_free( void * restrict pointer );
  * allocate aligned memory block
  *
  * Parameters:
- * alignment				- desired address alignment
- * size						- size of memory block to allocate in bytes
+ * alignment		- desired address alignment
+ * size				- size of memory block to allocate in bytes
  *
  * Returns:
- * pointer					- block was allocated (must be released with am_aligned_free)
- * NULL						- invalid arguments or allocation failure
+ * pointer			- block was allocated (must be released with am_aligned_free)
+ * NULL				- invalid arguments or allocation failure
  */
 void * am_aligned_malloc( size_t alignment, size_t size );
 /* Function:
  * reallocate aligned memory block
  *
  * Precondition:
- * pointer					- must be previously allocated with an am_aligned_malloc
- * size_new					- must be positive
+ * pointer			- must be previously allocated with an am_aligned_malloc
+ * size_new			- must be positive
  *
  * Parameters:
- * pointer					- existing aligned memory block
- * size_new					- size of desired memory block to reallocate
+ * pointer			- existing aligned memory block
+ * size_new			- size of desired memory block to reallocate
  *
  * Returns:
- * pointer					- block was reallocated
- * NULL						- invalid arguments or failed to allocate memory block
+ * pointer			- block was reallocated
+ * NULL				- invalid arguments or failed to allocate memory block
  */
+#	ifndef AM_NO_REALLOC
 void * am_aligned_realloc( void * restrict pointer, size_t size_new );
+#	endif /* AM_NO_REALLOC */
 /* Function:
  * allocate zero-initialized aligned memory for an array
  *
@@ -105,6 +109,8 @@ void * am_aligned_realloc( void * restrict pointer, size_t size_new );
  *						(must be released with am_aligned_free)
  * NULL				- invalid arguments, potential overflow or allocation failure
  */
+#	ifndef AM_NO_CALLOC
 void * am_aligned_calloc( size_t alignment, size_t elements_amount, size_t element_size );
+#	endif /* AM_NO_CALLOC */
 
 #endif/* ALIGNED_MEMORY_H */
