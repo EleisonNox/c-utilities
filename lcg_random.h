@@ -18,7 +18,7 @@
 #ifndef LCG_RANDOM_H
 #define LCG_RANDOM_H
 
-#include <stdint.h> /* uint64_t */
+#  include <stdint.h> /* uint64_t */
 
 /* Function:
  * set a seed for a 64-bit linear congruential generator
