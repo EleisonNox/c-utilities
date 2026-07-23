@@ -18,12 +18,12 @@
 #ifndef CLAMP_VALUES_H
 #define CLAMP_VALUES_H
 
-#include "assert_m.h"	/* assert	*/
+#	include "assert_m.h"	/* assert	*/
 
-#include <stddef.h>		/* size_t	*/
-#include <stdint.h>		/* int64_t	*/
+#	include <stddef.h>		/* size_t	*/
+#	include <stdint.h>		/* int64_t	*/
 
-#include <math.h>		/* isfinite	*/
+#	include <math.h>		/* isfinite	*/
 
 /* clamp values in range of [minimum, maximum], minimum shall be less than or equal to the maximum
  * for floating-point types: if minimum, maximum or value isn't finite - return unchanged value
