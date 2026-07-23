@@ -18,8 +18,8 @@
 #ifndef DA_DYNAMIC_ARRAY_H
 #define DA_DYNAMIC_ARRAY_H
 
-#include <stddef.h>		/* size_t	*/
-#include <stdbool.h>	/* bool		*/
+#	include <stddef.h>	/* size_t	*/
+#	include <stdbool.h>	/* bool		*/
 
 struct DA_Dynamic_Array_List {
 	void	* data_pointer;
