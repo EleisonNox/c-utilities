@@ -18,7 +18,7 @@
 #ifndef EXIT_PRINT_H
 #define EXIT_PRINT_H
 
-#include <stdbool.h>
+#  include <stdbool.h> /* bool */
 
 /* Function:
  * print an error message and exit with failure code
