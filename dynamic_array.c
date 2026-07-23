@@ -15,8 +15,8 @@
 
 #include "dynamic_array.h"
 
-#include "clamp_values.h"
-#include "assert_m.h"
+#include "clamp_values.h"	/* cv_clamp_size_t	*/
+#include "assert_m.h"		/* assert_m			*/
 
 #include <stdint.h>		/* SIZE_MAX	*/
 #include <stddef.h>		/* size_t	*/
@@ -92,7 +92,7 @@ bool da_dynamic_array_ensure_capacity(
 	const size_t capacity_maximal = SIZE_MAX / item_size;
 	if ( needed > capacity_maximal ) return false;
 
-	const size_t capacity_target = *capacity_pointer
+	const size_t capacity_target = (*capacity_pointer != 0)
 		? *capacity_pointer + (*capacity_pointer >> 1)
 		: base_amount;
 	size_t capacity_new = cv_clamp_size_t(
@@ -109,12 +109,12 @@ bool da_dynamic_array_ensure_capacity(
 	);
 
 	void * new_pointer = realloc( current_data_pointer, capacity_new * item_size );
-	if ( !new_pointer ) {
+	if ( new_pointer == NULL ) {
 		if ( capacity_new != needed ) {
 			capacity_new = needed;
 			/* overflow check is omitted here because capacity_new <= capacity_maximal */
 			new_pointer = realloc( current_data_pointer, capacity_new * item_size );
-			if ( !new_pointer ) return false;
+			if ( new_pointer == NULL ) return false;
 		} else return false;
 	}
 
@@ -156,7 +156,7 @@ bool da_dynamic_array_ensure_capacity_list(
 			capacity_maximal = capacity_maximal_current;
 	}
 
-	const size_t capacity_target = *capacity_pointer
+	const size_t capacity_target = (*capacity_pointer != 0)
 		? *capacity_pointer + (*capacity_pointer >> 1)
 		: base_amount;
 
@@ -184,7 +184,7 @@ void da_dynamic_array_free(
 	assert_m( amount_pointer	!= NULL, "Amount of arrays to free isn't found"	);
 	assert_m( data_pointer		!= NULL, "No array found to free"				);
 
-	if ( data_pointer ) {
+	if ( data_pointer != NULL ) {
 		void * current_data_pointer = NULL;
 		memcpy(
 				&current_data_pointer,
@@ -199,9 +199,9 @@ void da_dynamic_array_free(
 				sizeof( current_data_pointer )
 		);
 	}
-	if ( amount_pointer )
+	if ( amount_pointer != NULL )
 		*amount_pointer = 0;
-	if ( capacity_pointer )
+	if ( capacity_pointer != NULL )
 		*capacity_pointer = 0;
 }
 
@@ -237,7 +237,7 @@ static bool da_dynamic_array_expand_list(
 		assert_m( list_pointer[list_index].item_size != 0, "Item size shall not be 0" );
 		void * temporary_pointer =
 			realloc( *data_pointer, capacity_target * list_pointer[list_index].item_size );
-		if ( !temporary_pointer )
+		if ( temporary_pointer == NULL )
 		{
 			da_dynamic_array_restore_all( list_pointer, list_index, capacity_old );
 			return false;
@@ -265,11 +265,11 @@ static void da_dynamic_array_restore_all(
 
 	for ( size_t list_index = 0; list_index < list_amount; ++list_index ) {
 		void ** data_pointer = (void **)list_pointer[list_index].data_pointer;
-		if ( capacity_target ) {
+		if ( capacity_target != 0 ) {
 			assert_m( list_pointer[list_index].item_size != 0, "Item size shall not be 0" );
 			void * temporary_pointer =
 				realloc( *data_pointer, capacity_target * list_pointer[list_index].item_size );
-			if ( temporary_pointer ) *data_pointer = temporary_pointer;
+			if ( temporary_pointer != NULL ) *data_pointer = temporary_pointer;
 		} else {
 			free( *data_pointer );
 			*data_pointer = NULL;
