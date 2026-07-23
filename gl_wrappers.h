@@ -26,14 +26,14 @@
 #	include <GL/glew.h>	/* GLenum			*/
 #	include <GL/gl.h>	/* glCreateShader	*/
 
-static inline bool glCreateShader_wrapped( GLenum shader_type, GLuint * out_shader )
+static inline bool glCreateShader_wrapped( GLenum shader_type, GLuint * out_shader_pointer )
 {
 #ifndef NDEBUG
-	assert_m( out_shader != NULL, "No shader found" );
+	assert_m( out_shader_pointer != NULL, "No shader found" );
 	gl_errors_clean();
 #endif/*NDEBUG*/
 
-	*out_shader = glCreateShader( shader_type );
+	*out_shader_pointer = glCreateShader( shader_type );
 
 #ifndef NDEBUG
 	return gl_errors_check( "glCreateShader" );
@@ -45,18 +45,18 @@ static inline bool glCreateShader_wrapped( GLenum shader_type, GLuint * out_shad
 }
 
 static inline bool glShaderSource_wrapped(
-		GLuint shader, GLsizei sources_amount, const char * const * shader_sources,
-		const GLint * shader_length
+		GLuint shader, GLsizei sources_amount,
+		const char * const * shader_sources_pointer, const GLint * shader_length_pointer
 	)
 {
 #ifndef NDEBUG
-	assert_m( shader			!= 0,	"No shader found"				);
-	assert_m( shader_sources	!= NULL,"No shader source code found"	);
-	assert_m( sources_amount	> 0,	"Wrong amount of shader sources");
+	assert_m( shader				!= 0,	"No shader found"				);
+	assert_m( shader_sources_pointer!= NULL,"No shader source code found"	);
+	assert_m( sources_amount		> 0,	"Wrong amount of shader sources");
 	gl_errors_clean();
 #endif/*NDEBUG*/
 
-	glShaderSource( shader, sources_amount, shader_sources, shader_length );
+	glShaderSource( shader, sources_amount, shader_sources_pointer, shader_length_pointer );
 
 #ifndef NDEBUG
 	return gl_errors_check( "glShaderSource" );
@@ -84,13 +84,13 @@ static inline bool glCompileShader_wrapped( GLuint shader ) {
 #endif/*NDEBUG*/
 }
 
-static inline bool glCreateProgram_wrapped( GLuint * out_shader_program ) {
+static inline bool glCreateProgram_wrapped( GLuint * out_shader_program_pointer ) {
 #ifndef NDEBUG
-	assert_m( out_shader_program != NULL, "No shader program found" );
+	assert_m( out_shader_program_pointer != NULL, "No shader program found" );
 	gl_errors_clean();
 #endif/*NDEBUG*/
 
-	*out_shader_program = glCreateProgram();
+	*out_shader_program_pointer = glCreateProgram();
 
 #ifndef NDEBUG
 	return gl_errors_check( "glCreateProgram" );
