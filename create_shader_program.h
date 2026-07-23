@@ -18,10 +18,8 @@
 #ifndef CSP_CREATE_SHADER_PROGRAM_H
 #define CSP_CREATE_SHADER_PROGRAM_H
 
-#include <stdbool.h>
-
-#include <GL/glew.h>
-#include <GL/gl.h>
+#  include <GL/glew.h>  /* GLuint */
+#  include <GL/gl.h>
 
 /* Function:
  * create a shader program from a single shader source string
