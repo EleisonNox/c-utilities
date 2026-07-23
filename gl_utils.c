@@ -21,17 +21,17 @@
 #include <stdbool.h>
 
 bool gl_errors_check(
-		const char * restrict function_name
+		const char * restrict function_name_pointer
 	)
 {
-	assert_m( function_name != NULL, "No function name specified" );
+	assert_m( function_name_pointer != NULL, "No function name specified" );
 
 	GLenum gl_error_code = glGetError();
 	if ( gl_error_code == GL_NO_ERROR ) return true;
 
 	woem_push(
-		"(%s): %s",
-		function_name ? function_name : "gl_errors_check", gl_get_error_string( gl_error_code )
+		"(%s): %s", (function_name_pointer != NULL) ?
+			function_name_pointer : "gl_errors_check", gl_get_error_string( gl_error_code )
 	);
 
 	return false;
