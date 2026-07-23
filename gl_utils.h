@@ -39,7 +39,7 @@ static inline void gl_errors_clean(void) {
  * true					- no errors found
  * false				- an error found
  */
-bool gl_errors_check( const char * restrict function_name );
+bool gl_errors_check( const char * restrict function_name_pointer );
 
 /* Function:
  * get description of some OpenGL error code
