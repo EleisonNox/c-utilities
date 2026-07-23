@@ -18,10 +18,10 @@
 #ifndef GL_UTILS_H
 #define GL_UTILS_H
 
-#include <stdbool.h>
+#	include <stdbool.h> /* bool */
 
-#include <GL/glew.h>
-#include <GL/gl.h>
+#	include <GL/glew.h>	/* GLenum		*/
+#	include <GL/gl.h>	/* glGetError	*/
 
 /* Function:
  * clean OpenGL errors
