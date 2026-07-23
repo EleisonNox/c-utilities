@@ -15,7 +15,7 @@
 
 #include "exit_print.h"
 
-#include "assert_m.h"
+#include "assert_m.h"	/* assert_m */
 
 #include <stdio.h>		/* fprintf		*/
 #include <stdarg.h>		/* va_list		*/
@@ -47,7 +47,7 @@ void ep_exit_print_free( bool free_flag, char * restrict format_pointer, ... ) {
 
 	va_end( arguments );
 
-	if ( format_pointer && free_flag ) free( format_pointer );
+	if ( format_pointer != NULL && free_flag == true ) free( format_pointer );
 
 	exit( EXIT_FAILURE );
 }
@@ -60,7 +60,7 @@ void ep_exit_print_free( bool free_flag, char * restrict format_pointer, ... ) {
  * arguments		- format arguments
  */
 static void ep_inner_print( const char * restrict format_pointer, va_list arguments ) {
-	if ( !format_pointer ) {
+	if ( format_pointer == NULL ) {
 		(void) fprintf( stderr, "ERR: (ep_exit_print) no text to print\n" );
 		return;
 	}
